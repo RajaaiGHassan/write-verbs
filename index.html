@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ca">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Repte de Conjugació Sense Scroll</title>
+    <style>
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background-color: #f0f8ff;
+            color: #333;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-height: 100vh;
+        }
+
+        header {
+            background-color: #d52b1e;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+        }
+
+        .subtitle {
+            background-color: #fff;
+            text-align: center;
+            padding: 5px 10px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .timer-container {
+            background-color: #ffebee;
+            padding: 10px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #d52b1e;
+        }
+
+        .time-up {
+            display: none;
+            background-color: #d52b1e;
+            color: white;
+            text-align: center;
+            padding: 8px;
+        }
+
+        .exercise {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background-color: white;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+
+        .verb-card {
+            background-color: #fff8e1;
+            padding: 15px;
+            border-left: 5px solid #ffc107;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .verb-header {
+            font-weight: bold;
+            font-size: 18px;
+            color: #d52b1e;
+            margin-bottom: 10px;
+        }
+
+        .conjugation-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .pronoun {
+            width: 100px;
+            font-style: italic;
+            color: #666;
+        }
+
+        input {
+            flex: 1;
+            padding: 8px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+        }
+
+        input.correct {
+            background-color: #e8f5e9;
+            border-color: #66bb6a;
+        }
+
+        input.incorrect {
+            background-color: #ffebee;
+            border-color: #ef5350;
+        }
+
+        .feedback {
+            margin-left: 10px;
+            min-width: 100px;
+            font-weight: bold;
+        }
+
+        .correct-feedback {
+            color: #2e7d32;
+        }
+
+        .incorrect-feedback {
+            color: #c62828;
+        }
+
+        .controls {
+            background-color: #f9f9f9;
+            padding: 10px;
+            display: flex;
+            justify-content: space-around;
+            border-top: 1px solid #ddd;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        #check-btn {
+            background-color: #4caf50;
+            color: white;
+        }
+
+        #check-btn:hover {
+            background-color: #388e3c;
+        }
+
+        #next-btn {
+            background-color: #2196f3;
+            color: white;
+        }
+
+        #next-btn:hover {
+            background-color: #1976d2;
+        }
+
+        #finish-btn {
+            background-color: #d52b1e;
+            color: white;
+        }
+
+        #finish-btn:hover {
+            background-color: #b71c1c;
+        }
+
+        button:disabled {
+            background-color: #ccc !important;
+            cursor: not-allowed;
+        }
+
+        .results {
+            display: none;
+            padding: 20px;
+            background-color: #e8f5e9;
+            text-align: center;
+        }
+
+        .score {
+            font-size: 22px;
+            font-weight: bold;
+            color: #d52b1e;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Repte de Conjugació Catalana</h1>
+        </header>
+        <div class="subtitle">Omple els buits amb la conjugació correcta abans que s'acabi el temps!</div>
+        <div class="timer-container">
+            Temps restant: <span id="timer">60</span> segons
+        </div>
+        <div class="time-up">S'HA ACABAT EL TEMPS!</div>
+
+        <div class="exercise" id="exercise-container">
+            <!-- Verb exercises will be injected here -->
+        </div>
+
+        <div class="controls">
+            <button id="check-btn">Comprovar</button>
+            <button id="next-btn" disabled>Següent</button>
+            <button id="finish-btn">Finalitzar</button>
+        </div>
+
+        <div class="results" id="results">
+            <h2>Resultats Finals</h2>
+            <div class="score">Has aconseguit <span id="score">0</span> punts!</div>
+            <div id="detailed-results"></div>
+        </div>
+    </div>
+
+    <script>
+        const verbs = [
+            {
+                infinitive: "parlar",
+                translation: "(parlar)",
+                tense: "present",
+                conjugations: {
+                    "jo": "parlo",
+                    "tu": "parles",
+                    "ell/ella": "parla",
+                    "nosaltres": "parlem",
+                    "vosaltres": "parleu",
+                    "ells/elles": "parlen"
+                }
+            },
+            {
+                infinitive: "menjar",
+                translation: "(menjar)",
+                tense: "imperfet",
+                conjugations: {
+                    "jo": "menjava",
+                    "tu": "menjaves",
+                    "ell/ella": "menjava",
+                    "nosaltres": "menjàvem",
+                    "vosaltres": "menjàveu",
+                    "ells/elles": "menjaven"
+                }
+            },
+            {
+                infinitive: "viure",
+                translation: "(viure)",
+                tense: "preterit",
+                conjugations: {
+                    "jo": "visquí",
+                    "tu": "visqueres",
+                    "ell/ella": "visqué",
+                    "nosaltres": "visquérem",
+                    "vosaltres": "visquéreu",
+                    "ells/elles": "visqueren"
+                }
+            }
+        ];
+
+        let currentVerbIndex = 0;
+        let score = 0;
+        let timeLeft = 60;
+        let timer;
+        let gameActive = true;
+
+        const exerciseContainer = document.getElementById("exercise-container");
+        const timerDisplay = document.getElementById("timer");
+        const checkBtn = document.getElementById("check-btn");
+        const nextBtn = document.getElementById("next-btn");
+        const finishBtn = document.getElementById("finish-btn");
+        const resultsDiv = document.getElementById("results");
+        const scoreDisplay = document.getElementById("score");
+        const detailedResults = document.getElementById("detailed-results");
+        const timeUpDiv = document.querySelector(".time-up");
+
+        function initGame() {
+            showCurrentVerb();
+            startTimer();
+        }
+
+        function showCurrentVerb() {
+            const verb = verbs[currentVerbIndex];
+            let html = `
+        <div style="max-width: 500px; width: 100%;">
+            <div class="verb-card">
+          <div class="verb-header">Verb: ${verb.infinitive} ${verb.translation} - ${getTenseName(verb.tense)}</div>
+          </div>
+      `;
+
+            for (const [pronoun, answer] of Object.entries(verb.conjugations)) {
+                html += `
+          <div class="conjugation-row">
+            <div class="pronoun">${pronoun}</div>
+            <input type="text" data-answer="${answer.toLowerCase()}" data-pronoun="${pronoun}" />
+            <div class="feedback"></div>
+          </div>
+        `;
+            }
+
+            html += `</div>`;
+            exerciseContainer.innerHTML = html;
+            exerciseContainer.querySelector("input")?.focus();
+        }
+
+        function getTenseName(tense) {
+            return {
+                present: "Present",
+                preterit: "Pretèrit",
+                imperfect: "Imperfet"
+            }[tense] || tense;
+        }
+
+        function checkAnswers() {
+            if (!gameActive) return;
+
+            const inputs = exerciseContainer.querySelectorAll("input");
+            let allCorrect = true;
+            let correctCount = 0;
+
+            inputs.forEach(input => {
+                const userAnswer = input.value.trim().toLowerCase();
+                const correctAnswer = input.dataset.answer;
+                const feedback = input.nextElementSibling;
+
+                if (userAnswer === correctAnswer) {
+                    input.classList.add("correct");
+                    input.classList.remove("incorrect");
+                    feedback.textContent = "Correcte!";
+                    feedback.className = "feedback correct-feedback";
+                    correctCount++;
+                } else {
+                    input.classList.add("incorrect");
+                    input.classList.remove("correct");
+                    feedback.textContent = `Correcte: ${correctAnswer}`;
+                    feedback.className = "feedback incorrect-feedback";
+                    allCorrect = false;
+                }
+            });
+
+            const points = Math.max(1, Math.floor(timeLeft / 10)) * correctCount;
+            score += points;
+
+            checkBtn.disabled = true;
+            nextBtn.disabled = !allCorrect;
+        }
+
+        function nextVerb() {
+            currentVerbIndex++;
+            if (currentVerbIndex < verbs.length) {
+                showCurrentVerb();
+                checkBtn.disabled = false;
+                nextBtn.disabled = true;
+            } else {
+                finishGame();
+            }
+        }
+
+        function startTimer() {
+            timer = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = timeLeft;
+
+                if (timeLeft <= 0) {
+                    timeUp();
+                }
+            }, 1000);
+        }
+
+        function timeUp() {
+            clearInterval(timer);
+            gameActive = false;
+            timeUpDiv.style.display = "block";
+            checkBtn.disabled = true;
+            nextBtn.disabled = true;
+            finishBtn.disabled = true;
+
+            const inputs = exerciseContainer.querySelectorAll("input");
+            inputs.forEach(input => input.disabled = true);
+
+            checkAnswers();
+            setTimeout(finishGame, 3000);
+        }
+
+        function finishGame() {
+            clearInterval(timer);
+            gameActive = false;
+
+            const total = verbs.length * Object.keys(verbs[0].conjugations).length;
+            const percent = Math.round((score / total) * 100);
+            scoreDisplay.textContent = `${score} / ${total} (${percent}%)`;
+
+            let details = "<h3>Resum:</h3><ul>";
+            for (let i = 0; i < verbs.length; i++) {
+                details += `<li>${verbs[i].infinitive}: ${i < currentVerbIndex ? "Completat" : "No completat"}</li>`;
+            }
+            details += "</ul>";
+            detailedResults.innerHTML = details;
+
+            exerciseContainer.style.display = "none";
+            document.querySelector(".controls").style.display = "none";
+            resultsDiv.style.display = "block";
+        }
+
+        checkBtn.addEventListener("click", checkAnswers);
+        nextBtn.addEventListener("click", nextVerb);
+        finishBtn.addEventListener("click", finishGame);
+
+        exerciseContainer.addEventListener("keypress", e => {
+            if (e.key === "Enter") checkAnswers();
+        });
+
+        initGame();
+    </script>
+</body>
+
+</html>
